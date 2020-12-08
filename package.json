@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "node-notifier": "^8.0.0"
+  },
+  "dependencies": {
+    "nodemailer": "^6.4.16",
+    "selenium-webdriver": "^4.0.0-alpha.7"
+  }
+}
