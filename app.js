@@ -3,22 +3,20 @@ const fs = require('fs');
 const webdriver = require('selenium-webdriver');
 const { Builder, By, until, Dimension } = webdriver;
 const { promisify } = require('util');
-const { windowWidth, windowHeight, quitLine, waitingTime } = require('./config');
+const { windowWidth, windowHeight, quitLine, restartLine, waitingTime } = require('./config');
 const sleep = require('sleep');
 
 // ブラウザの設定
 const capabilities = webdriver.Capabilities.chrome(); //ブラウザの指定
 const url = 'https://trade.highlow.com/';
 
-let driver = new Builder().forBrowser('chrome').build();
+let driver;
 let balance;
-let restartLine;
-
-async function driverStart() {
-  driver;
-}
+let entryBalance;
+let returnBalance;
 
 async function driverFunc() {
+  driver = new Builder().forBrowser('chrome').build();
   await driver.manage().window().setRect({
     width: windowWidth,
     height: windowHeight,
@@ -37,7 +35,7 @@ async function changeAttribute() {
   driver.executeScript("document.querySelector('.defaultAmount[val=\"50000\"]').setAttribute('val', '200000')");
 }
 
-async function balanceFunc() {
+async function balanceTxtToNumber() {
   balance = await driver.findElement(By.css('#balance')).getText();
   balance = balance.replace('¥', '').replace(/,/g, '');
   balance = Number(balance);
@@ -49,35 +47,39 @@ async function entryFunc() {
   await driver.executeScript("document.querySelector('#invest_now_button').click()");
 }
 
-async function updateRestartLine() {
-  restartLine = balance;
-}
-
 (async () => {
   while (true) {
     await driverFunc();
     await changeAttribute();
-    await balanceFunc();
-    await updateRestartLine();
-    if (balance > quitLine) {
-      console.log('quit');
-      driver.quit();
-    } else if (balance < restartLine) {
-      console.log('restart');
-      driver.quit();
-
-      await sleep.msleep(4000);
-    } else {
-      console.log('entry');
-      while (balance > restartLine) {
-        while (balance > restartLine) {
-          await entryFunc();
-          await sleep.msleep(1500);
-          await balanceFunc();
+    await balanceTxtToNumber();
+    entryBalance = balance; // エントリー時の残高を保存
+    returnBalance = balance; // エントリー時の残高を保存
+    while (true) {
+      if (balance > quitLine) {
+        console.log(`残高が一定値以上に達したので終了します。`);
+        await driver.quit();
+        break;
+      } else if (returnBalance < entryBalance) {
+        //エントリー時の残高が取引終了後の残高より高い場合（損した）
+        console.log(`残高がエントリー時より下がったため再起動します`);
+        await driver.quit();
+        break;
+      } else {
+        while (returnBalance >= entryBalance) {
+          //エントリー時の残高が取引終了後の残高以下の場合（儲けた）
+          console.log('取引します');
+          entryBalance = balance; // エントリー時の残高を保存
+          console.log(`取引前の残高：${entryBalance}`);
+          while (balance > restartLine) {
+            await entryFunc();
+            await sleep.msleep(1500);
+            await balanceTxtToNumber();
+          }
+          await sleep.msleep(waitingTime);
+          await balanceTxtToNumber();
+          returnBalance = balance;
+          console.log(`取引後の残高：${returnBalance}`);
         }
-        await sleep.msleep(45000);
-        await balanceFunc();
-        // await updateRestartLine();
       }
     }
   }
