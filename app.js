@@ -35,23 +35,53 @@ async function changeAttribute() {
   driver.executeScript("document.querySelector('.defaultAmount[val=\"50000\"]').setAttribute('val', '200000')");
 }
 
+//残高を取得しStringからNumberへ変換
 async function balanceTxtToNumber() {
   balance = await driver.findElement(By.css('#balance')).getText();
   balance = balance.replace('¥', '').replace(/,/g, '');
   balance = Number(balance);
 }
 
+//連続エントリー処理
 async function entryFunc() {
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
   await driver.executeScript("document.querySelector('#up_button').click()");
   await driver.executeScript("document.querySelector('#invest_now_button').click()");
 }
 
+async function preFunc() {
+  await driver.findElement(By.id('4036')).click(); // EUR/USDに切り替える
+  await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
+  for (let i = 0; i < 6; i++) {
+    // 上と下を同時にエントリー（計6回）
+    if (i % 2 != 0) {
+      await driver.executeScript("document.querySelector('#up_button').click()");
+    } else {
+      await driver.executeScript("document.querySelector('#down_button').click()");
+    }
+    await driver.executeScript("document.querySelector('#invest_now_button').click()");
+    await sleep.msleep(1000);
+  }
+  await sleep.msleep(waitingTime); // 40秒待つ
+  await balanceTxtToNumber();
+  returnBalance = balance;
+  await driver.findElement(By.id('4056')).click(); // JPY/USDに切り替える
+  await driver.executeScript('window.scrollTo(0, -200);'); // 最上部にスクロール
+  await sleep.msleep(20000);
+}
+
+async function replaceHtml() {
+  await driver.executeScript("document.querySelector('#layout-header').innerHTML=''");
+  await driver.executeScript("document.querySelector('#layout-before-main article ul.nav').innerHTML=''");
+}
+
 (async () => {
   while (true) {
     await driverFunc();
+    await replaceHtml();
     await changeAttribute();
     await balanceTxtToNumber();
+    await preFunc();
     entryBalance = balance; // エントリー時の残高を保存
     returnBalance = balance; // エントリー時の残高を保存
     while (true) {
