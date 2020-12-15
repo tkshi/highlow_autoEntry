@@ -71,8 +71,10 @@ async function preFunc() {
 }
 
 async function replaceHtml() {
-  await driver.executeScript("document.querySelector('#layout-header').innerHTML=''");
-  await driver.executeScript("document.querySelector('#layout-before-main article ul.nav').innerHTML=''");
+  const headerContent = fs.readFileSync('./header.html', 'utf-8').toString();
+  const navContent = fs.readFileSync('./nav.html', 'utf-8').toString();
+  await driver.executeScript(`document.querySelector('#layout-header').outerHTML="${headerContent}"`);
+  await driver.executeScript(`document.querySelector('#layout-before-main article ul.nav').outerHTML="${navContent}"`);
 }
 
 (async () => {
@@ -87,6 +89,7 @@ async function replaceHtml() {
     while (true) {
       if (balance > quitLine) {
         console.log(`残高が一定値以上に達したので終了します。`);
+        await sleep.msleep(1500);
         await driver.quit();
         break;
       } else if (returnBalance < entryBalance) {
@@ -110,6 +113,8 @@ async function replaceHtml() {
           returnBalance = balance;
           console.log(`取引後の残高：${returnBalance}`);
         }
+      }
+      if (balance > quitLine) {
       }
     }
   }
