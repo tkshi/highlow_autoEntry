@@ -49,6 +49,7 @@ async function entryFunc() {
   await driver.executeScript("document.querySelector('#invest_now_button').click()");
 }
 
+//最初に行う
 async function preFunc() {
   await driver.findElement(By.id('4036')).click(); // EUR/USDに切り替える
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
@@ -87,35 +88,52 @@ async function replaceHtml() {
     entryBalance = balance; // エントリー時の残高を保存
     returnBalance = balance; // エントリー時の残高を保存
     while (true) {
-      if (balance > quitLine) {
-        console.log(`残高が一定値以上に達したので終了します。`);
-        await sleep.msleep(1500);
-        await driver.quit();
+      if (returnBalance >= quitLine) {
+        //残高が目標とする金額に達成した場合
+        console.log(`残高が目標に達したので終了します。`);
+        await sleep.msleep(20000); //終了までの待機時間（ミリ秒）
+        try {
+          await driver.quit();
+        } catch (error) {
+          console.log('エラー：終了出来ませんでした');
+        }
         break;
-      } else if (returnBalance < entryBalance) {
-        //エントリー時の残高が取引終了後の残高より高い場合（損した）
-        console.log(`残高がエントリー時より下がったため再起動します`);
-        await driver.quit();
+      } else if (restartLine > returnBalance) {
+        //エントリー時の残高が60万以下だった場合
+        console.log(`残高が${restartLine}円以下のため再起動します`);
+        try {
+          await driver.quit();
+        } catch (error) {
+          console.log('エラー：再起動出来ませんでした');
+        }
         break;
       } else {
-        while (returnBalance >= entryBalance) {
+        while (returnBalance >= restartLine) {
           //エントリー時の残高が取引終了後の残高以下の場合（儲けた）
-          console.log('取引します');
+          console.log('取引を開始します');
           entryBalance = balance; // エントリー時の残高を保存
           console.log(`取引前の残高：${entryBalance}`);
-          while (balance > restartLine) {
+          while (balance > 200000) {
+            //残高20万以下になるまでベット
             await entryFunc();
             await sleep.msleep(1500);
             await balanceTxtToNumber();
           }
-          await sleep.msleep(waitingTime);
+          await sleep.msleep(waitingTime); //最後のBETから待つ
           await balanceTxtToNumber();
           returnBalance = balance;
           console.log(`取引後の残高：${returnBalance}`);
+          if (restartLine > returnBalance) {
+            break;
+          }
         }
       }
-      if (balance > quitLine) {
+      if (balance >= quitLine) {
+        break;
       }
+    }
+    if (balance >= quitLine) {
+      break;
     }
   }
 })();
