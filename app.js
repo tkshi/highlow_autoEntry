@@ -14,6 +14,7 @@ let driver;
 let balance;
 let entryBalance;
 let returnBalance;
+let random;
 
 async function driverFunc() {
   driver = new Builder().forBrowser('chrome').build();
@@ -44,7 +45,6 @@ async function balanceTxtToNumber() {
 
 //連続エントリー処理
 async function entryFunc() {
-  let random = Math.floor(Math.random() * 2);
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
   if (random == 0) {
     await driver.executeScript("document.querySelector('#up_button').click()");
@@ -58,7 +58,7 @@ async function entryFunc() {
 async function preFunc() {
   await driver.findElement(By.id('4036')).click(); // EUR/USDに切り替える
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 2; i++) {
     // 上と下を同時にエントリー（計6回）
     if (i % 2 != 0) {
       await driver.executeScript("document.querySelector('#up_button').click()");
@@ -118,6 +118,7 @@ async function replaceHtml() {
           console.log('取引を開始します');
           entryBalance = balance; // エントリー時の残高を保存
           console.log(`取引前の残高：${entryBalance}`);
+          random = Math.floor(Math.random() * 2);
           while (balance > 200000) {
             //残高20万以下になるまでベット
             await entryFunc();
