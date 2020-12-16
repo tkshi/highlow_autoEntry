@@ -44,8 +44,13 @@ async function balanceTxtToNumber() {
 
 //連続エントリー処理
 async function entryFunc() {
+  let random = Math.floor(Math.random() * 2);
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
-  await driver.executeScript("document.querySelector('#up_button').click()");
+  if (random == 0) {
+    await driver.executeScript("document.querySelector('#up_button').click()");
+  } else {
+    await driver.executeScript("document.querySelector('#down_button').click()");
+  }
   await driver.executeScript("document.querySelector('#invest_now_button').click()");
 }
 
@@ -75,7 +80,7 @@ async function replaceHtml() {
   const headerContent = fs.readFileSync('./header.html', 'utf-8').toString();
   const navContent = fs.readFileSync('./nav.html', 'utf-8').toString();
   await driver.executeScript(`document.querySelector('#layout-header').outerHTML="${headerContent}"`);
-  await driver.executeScript(`document.querySelector('#layout-before-main article ul.nav').outerHTML="${navContent}"`);
+  await driver.executeScript(`document.querySelector("#layout-before-main > div > div > article > ul > li.current.demo-login-visible").style.cssText = 'display : block !important;visibility:visible !important'`);
 }
 
 (async () => {
