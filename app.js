@@ -58,6 +58,12 @@ async function entryFunc() {
 async function preFunc() {
   await driver.findElement(By.id('4036')).click(); // EUR/USDに切り替える
   await driver.executeScript('document.querySelector(\'.defaultAmount[val="200000"]\').click()');
+  // 新規入会を、消す
+  await driver.executeScript('document.querySelector("#bs-example-navbar-collapse-1 > ul > li.signup-menu-toggle-bookmark.last-child").remove()');
+  // デモを消す
+  await driver.executeScript('document.querySelector("#common-nav > div > div > div.navbar-header > a > img.demo-logo-label").remove()')
+  // ヘッダーを消す
+  await driver.executeScript('document.querySelector("#header > div").remove()')
   for (let i = 0; i < 2; i++) {
     // 上と下を同時にエントリー（計6回）
     if (i % 2 != 0) {
@@ -79,7 +85,7 @@ async function preFunc() {
 async function replaceHtml() {
   const headerContent = fs.readFileSync('./header.html', 'utf-8').toString();
   const navContent = fs.readFileSync('./nav.html', 'utf-8').toString();
-  await driver.executeScript(`document.querySelector('#layout-header').outerHTML="${headerContent}"`);
+  // await driver.executeScript(`document.querySelector('#layout-header').outerHTML="${headerContent}"`);
   await driver.executeScript(`document.querySelector("#layout-before-main > div > div > article > ul > li.current.demo-login-visible").style.cssText = 'display : block !important;visibility:visible !important'`);
 }
 
